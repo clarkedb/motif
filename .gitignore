@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# VS code settings
+.vscode/
+
+# Motif data
+data/
