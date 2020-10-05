@@ -130,6 +130,7 @@ dmypy.json
 
 # VS code settings
 .vscode/
+.idea/
 
 # Motif data
 data/
