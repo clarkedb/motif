@@ -25,3 +25,20 @@ def get_genre_metadata(tracks="../data/fma_metadata/tracks.csv"):
     )
     small = tracks[tracks["set", "subset", "Unnamed: 32_level_2"] == "small"]
     return small["track", "genre_top", "Unnamed: 40_level_2"]
+
+def generate_genre_dataframe(tracks="../data/fma_metadata/tracks.csv", outfile="../data/genres.csv"):
+    """
+    Creates a genre dataframe and stores it as a csv.
+    """
+    genre_series = get_genre_metadata(tracks)
+    df = pd.DataFrame({ 'track_id': genre_series.index.values, 'genre': genre_series.values })
+    df.to_csv(outfile)
+    return
+
+def genre_dataframe(filename="../data/genres.csv"):
+    """
+    Loads the genre csv as a pandas dataframe.
+    """
+    df = pd.read_csv(filename, header=0, index_col=0)
+    return df
+
