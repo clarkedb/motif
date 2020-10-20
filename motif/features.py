@@ -71,3 +71,63 @@ def get_spectral_rolloff(y: np.ndarray, sr: int, roll_percent, get_stats=False):
         return rolloff.mean(), rolloff.var()
     else:
         return rolloff
+
+
+def get_zero_crossing_rate(y, get_mean=True):
+    """
+    Compute the Zero Crossing Rate (ZCR)
+    :param y: np.ndarray [shape=(n,)]
+    Sampling rate of y
+    :param get_mean: bool
+    Whether to instead return the mean of ZCR over all frames
+    :return: np.ndarray [shape=(1,t)] or float
+    ZCR for each frame, or the mean ZCR
+    """
+    zcrs = librosa.feature.zero_crossing_rate(y=y)
+    if get_mean:
+        return zcrs.mean()
+    else:
+        return zcrs
+
+
+def get_frequency_range(y, sr, eps=0.01):
+    """
+    Compute the range of frequencies in majority interval
+    :param y: np.ndarray [shape=(n,)]
+    Audio time series
+    :param sr: number > 0
+    Sampling rate of y
+    :param eps: float in (0.0, 0.5)
+    The percentage of frequencies to ignore in each tail
+    :return: (float, float)
+    The min and max frequency in the interval perscribed by eps
+    """
+    if eps >= 0.5 or eps <= 0:
+        raise ValueError('The interval must be in the interval (0.0,0.5)')
+    
+    max_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(1-eps)).max()
+    min_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(eps)).min()
+
+    return min_freq, max_freq
+
+
+def get_mfcc(y, sr, n_mfcc=20, get_mean=False):
+    """
+    Calculate the Mel Frequency Cepstral Coefficients (MFCCs)
+    :param y: np.ndarray [shape=(m,)]
+    Audio time series
+    :param sr: number > 0
+    Sampling rate of y
+    :param n_mfcc: int > 0
+    Number of coefficients to calcluat per frame
+    :param get_mean: bool
+    If true, returns the average for each coefficient
+    :return: np.ndarray [shape=(n,t)] or np.ndarray [shape=(n,)]
+    The MFCC of each time frame or average of each MFCC across frames
+    """
+    mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
+    
+    if get_mean:
+        return mfcc.mean(axis=0)
+    else:
+        return mfcc
