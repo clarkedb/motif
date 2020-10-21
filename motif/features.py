@@ -1,9 +1,14 @@
 from typing import Tuple
 
 import librosa
+from librosa.feature.spectral import zero_crossing_rate
 import numpy as np
 import scipy.linalg as la
 import scipy.stats as stats
+
+import json
+from data import genre_dataframe, get_wav_filepath
+import pandas as pd
 
 # coefficients from: http://rnhart.net/articles/key-finding/
 major_coeffs = np.array(
@@ -111,7 +116,7 @@ def get_frequency_range(y, sr, eps=0.01):
     return min_freq, max_freq
 
 
-def get_mfcc(y, sr, n_mfcc=20, get_mean=False):
+def get_mfcc(y, sr, n_mfcc=20, get_mean=True):
     """
     Calculate the Mel Frequency Cepstral Coefficients (MFCCs)
     :param y: np.ndarray [shape=(m,)]
@@ -128,6 +133,68 @@ def get_mfcc(y, sr, n_mfcc=20, get_mean=False):
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
     
     if get_mean:
-        return mfcc.mean(axis=0)
+        return mfcc.mean(axis=1)
     else:
         return mfcc
+
+
+class FeatureProcessor:
+    def __init__(self):
+        with open("../config/feature_config.json", "r") as read_file:
+            self.config = json.load(read_file)
+
+    def process_file(self, filepath):
+        """Processes the given file creating features"""
+        try:
+            y, sr = librosa.load(filepath, duration=self.config['file-duration'])
+        except FileNotFoundError:
+            raise FileNotFoundError(f"No such file or directory: '{filepath}'")
+        except:
+            raise ValueError(f"File must be wav file or mp3 file")
+
+        features = np.array([])
+
+        # zero crossing rate
+        zcr = get_zero_crossing_rate(y, get_mean=self.config['zero-crossing-rate']['use-mean'])
+        features = np.append(features, zcr)
+
+        # frequency range
+        freq_range = np.array(get_frequency_range(y, sr, eps=self.config['frequency-range']['eps']))
+        features = np.append(features, freq_range)
+
+        # mfcc
+        mfcc = get_mfcc(y, sr, n_mfcc=self.config['mfcc']['n'], get_mean=self.config['mfcc']['use-mean'])
+        features = np.append(features, mfcc)
+
+        return features
+
+    def feature_list(self):
+        """Returns a list of the feature labels"""
+        fl = ['zcr', 'min_freq', 'max_freq']
+
+        for i in range(self.config['mfcc']['n']):
+            fl.append(f'mfcc{i+1}')
+
+        return fl
+
+    def process_df(self, df):
+        """Takes a dataframe of track_ids and genre labels and creates the
+        features for each track appending them as columns to the dataframe.
+        """
+        columns = self.feature_list()
+
+        # placeholder
+        features = np.empty_like(columns)
+
+        for track_id in df.track_id:
+            feature_array = self.process_file(get_wav_filepath(track_id))
+            features = np.vstack((features, feature_array))
+        
+        # remove dummy row and make df
+        features = features[1:]
+        fdf = pd.DataFrame(features, columns=columns)
+
+        fdf['track_id'] = df['track_id']
+        fdf['genre_code'] = df['genre'].apply(lambda gen : self.config['genre-codes'][gen])
+
+        return fdf

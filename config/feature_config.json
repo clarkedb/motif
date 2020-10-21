@@ -1,0 +1,23 @@
+{
+  "file-duration": 30,
+  "genre-codes": {
+    "Hip-Hop": 0,
+    "Pop": 1,
+    "Folk": 2,
+    "Experimental": 3,
+    "Rock": 4,
+    "International": 5,
+    "Electronic": 6,
+    "Instrumental": 7
+  },
+  "zero-crossing-rate": {
+    "use-mean": true
+  },
+  "frequency-range": {
+    "eps": 0.2
+  },
+  "mfcc": {
+    "use-mean": true,
+    "n": 6
+  }
+}
