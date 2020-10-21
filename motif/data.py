@@ -42,3 +42,7 @@ def genre_dataframe(filename="../data/genres.csv"):
     df = pd.read_csv(filename, header=0, index_col=0)
     return df
 
+def get_wav_filepath(track_id):
+    track_file = "%06.i"%track_id + '.wav'
+
+    return "../data/wavs/" + track_file
