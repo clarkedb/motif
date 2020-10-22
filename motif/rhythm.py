@@ -42,7 +42,7 @@ def ac_peaks(data, rate, plot=False):
     freqs = librosa.tempo_frequencies(gram.shape[0], sr=rate)
 
     # Find the peaks of the autocorrelation plot, sort them, and keep only the three highest peaks
-    peaks, _ = find_peaks(ac_global, prominence=100)
+    peaks, _ = find_peaks(ac_global)
     sorting = np.argsort(ac_global[peaks])
     peaks = peaks[sorting][-3:]
 

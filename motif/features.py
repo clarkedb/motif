@@ -120,7 +120,7 @@ def get_frequency_range(y, sr, eps=0.01):
     max_freq = librosa.feature.spectral_rolloff(
         y=y, sr=sr, roll_percent=(1 - eps)
     ).max()
-    min_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(eps)).min()
+    min_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=eps).min()
 
     return min_freq, max_freq
 
@@ -211,13 +211,13 @@ class FeatureProcessor:
         ]
 
         for i in range(self.config["mfcc"]["n"]):
-            fl.append(f"mfcc{i+1}")
+            fl.append(f"mfcc{i + 1}")
 
-        for i in range(self.config['tempo']['n']):
-            fl.append(f'tempo{i+1}')
+        for i in range(self.config["tempo"]["n"]):
+            fl.append(f"tempo{i + 1}")
 
-        for i in range(self.config['tonnetz']['n']):
-            fl.append(f'tonnetz{i+1}')
+        for i in range(self.config["tonnetz"]["n"]):
+            fl.append(f"tonnetz{i + 1}")
 
         return fl
 
@@ -228,14 +228,13 @@ class FeatureProcessor:
         columns = self.feature_list()
 
         # placeholder
-        features = np.empty_like(columns)
+        features = np.empty((len(df), len(columns)))
 
-        for track_id in df.track_id:
-            feature_array = self.process_file(get_wav_filepath(track_id))
-            features = np.vstack((features, feature_array))
+        for i, track_id in enumerate(df.track_id):
+            print(i, track_id)
+            features[i] = self.process_file(get_wav_filepath(track_id))
 
-        # remove dummy row and make df
-        features = features[1:]
+        # convert to dataframe
         fdf = pd.DataFrame(features, columns=columns)
 
         fdf["track_id"] = df["track_id"]
