@@ -19,5 +19,11 @@
   "mfcc": {
     "use-mean": true,
     "n": 6
+  },
+  "tempo": {
+    "n": 3
+  },
+  "tonnetz": {
+    "n": 12
   }
 }

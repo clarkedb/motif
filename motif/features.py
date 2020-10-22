@@ -5,6 +5,8 @@ from librosa.feature.spectral import zero_crossing_rate
 import numpy as np
 import scipy.linalg as la
 import scipy.stats as stats
+from tonnetz import get_ton
+from rhythm import ac_peaks
 
 import json
 from data import genre_dataframe, get_wav_filepath
@@ -109,7 +111,7 @@ def get_frequency_range(y, sr, eps=0.01):
     """
     if eps >= 0.5 or eps <= 0:
         raise ValueError('The interval must be in the interval (0.0,0.5)')
-    
+
     max_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(1-eps)).max()
     min_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(eps)).min()
 
@@ -131,7 +133,7 @@ def get_mfcc(y, sr, n_mfcc=20, get_mean=True):
     The MFCC of each time frame or average of each MFCC across frames
     """
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
-    
+
     if get_mean:
         return mfcc.mean(axis=1)
     else:
@@ -166,6 +168,14 @@ class FeatureProcessor:
         mfcc = get_mfcc(y, sr, n_mfcc=self.config['mfcc']['n'], get_mean=self.config['mfcc']['use-mean'])
         features = np.append(features, mfcc)
 
+        # Tempo autocorrelation peaks (top three)
+        tempo = ac_peaks(y, sr)
+        features = np.append(features, tempo)
+
+        # Tonnetz
+        ton = get_ton(y, sr)
+        features = np.append(features, ton)
+
         return features
 
     def feature_list(self):
@@ -174,6 +184,12 @@ class FeatureProcessor:
 
         for i in range(self.config['mfcc']['n']):
             fl.append(f'mfcc{i+1}')
+
+        for i in range(self.config['tempo']['n']):
+            fl.append(f'tempo{i+1}')
+
+        for i in range(self.config['tonnetz']['n']):
+            fl.append(f'tonnetz{i+1}')
 
         return fl
 
@@ -189,7 +205,7 @@ class FeatureProcessor:
         for track_id in df.track_id:
             feature_array = self.process_file(get_wav_filepath(track_id))
             features = np.vstack((features, feature_array))
-        
+
         # remove dummy row and make df
         features = features[1:]
         fdf = pd.DataFrame(features, columns=columns)
