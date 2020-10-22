@@ -19,5 +19,9 @@
   "mfcc": {
     "use-mean": true,
     "n": 6
+  },
+  "spectral-rolloff": {
+    "get-stats": true,
+    "rolloff-percent": 0.99
   }
 }

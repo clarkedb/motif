@@ -11,14 +11,20 @@ from data import genre_dataframe, get_wav_filepath
 import pandas as pd
 
 # coefficients from: http://rnhart.net/articles/key-finding/
-major_coeffs = np.array(
-    [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
-)
-minor_coeffs = np.array(
-    [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
-)
-major = la.circulant(stats.zscore(major_coeffs)).T
-minor = la.circulant(stats.zscore(minor_coeffs)).T
+major_coeffs = la.circulant(
+    stats.zscore(
+        np.array(
+            [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
+        )
+    )
+).T
+minor_coeffs = la.circulant(
+    stats.zscore(
+        np.array(
+            [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+        )
+    )
+).T
 
 # map an index 0-11 to a key
 keys = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
@@ -47,17 +53,16 @@ def find_key(y: np.ndarray, sr: int) -> Tuple[bool, int]:
 
     # Krumhansl-Schmuckler algorithm (key estimation)
     x = stats.zscore(average_pitch)
-    major_corr, minor_corr = major.dot(x), minor.dot(x)
+    major_corr, minor_corr = major_coeffs.dot(x), minor_coeffs.dot(x)
     major_key, minor_key = major_corr.argmax(), minor_corr.argmax()
 
     # determine if the key is major or minor
-    print(major_key, minor_key)
     is_major = major_corr[major_key] > minor_corr[minor_key]
 
     return is_major, major_key if is_major else minor_key
 
 
-def get_spectral_rolloff(y: np.ndarray, sr: int, roll_percent, get_stats=False):
+def get_spectral_rolloff(y: np.ndarray, sr: int, roll_percent, get_stats=True):
     """
     Compute the spectral rolloff for each frame
     :param y: np.ndarray [shape=(n,)]
@@ -108,9 +113,11 @@ def get_frequency_range(y, sr, eps=0.01):
     The min and max frequency in the interval perscribed by eps
     """
     if eps >= 0.5 or eps <= 0:
-        raise ValueError('The interval must be in the interval (0.0,0.5)')
-    
-    max_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(1-eps)).max()
+        raise ValueError("The interval must be in the interval (0.0,0.5)")
+
+    max_freq = librosa.feature.spectral_rolloff(
+        y=y, sr=sr, roll_percent=(1 - eps)
+    ).max()
     min_freq = librosa.feature.spectral_rolloff(y=y, sr=sr, roll_percent=(eps)).min()
 
     return min_freq, max_freq
@@ -131,7 +138,7 @@ def get_mfcc(y, sr, n_mfcc=20, get_mean=True):
     The MFCC of each time frame or average of each MFCC across frames
     """
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
-    
+
     if get_mean:
         return mfcc.mean(axis=1)
     else:
@@ -146,34 +153,56 @@ class FeatureProcessor:
     def process_file(self, filepath):
         """Processes the given file creating features"""
         try:
-            y, sr = librosa.load(filepath, duration=self.config['file-duration'])
+            y, sr = librosa.load(filepath, duration=self.config["file-duration"])
         except FileNotFoundError:
             raise FileNotFoundError(f"No such file or directory: '{filepath}'")
         except:
             raise ValueError(f"File must be wav file or mp3 file")
 
-        features = np.array([])
-
         # zero crossing rate
-        zcr = get_zero_crossing_rate(y, get_mean=self.config['zero-crossing-rate']['use-mean'])
-        features = np.append(features, zcr)
+        zcr = get_zero_crossing_rate(
+            y, get_mean=self.config["zero-crossing-rate"]["use-mean"]
+        )
 
         # frequency range
-        freq_range = np.array(get_frequency_range(y, sr, eps=self.config['frequency-range']['eps']))
-        features = np.append(features, freq_range)
+        freq_range = np.array(
+            get_frequency_range(y, sr, eps=self.config["frequency-range"]["eps"])
+        )
+
+        # major/minor and key
+        major, key = find_key(y, sr)
+
+        rolloff_mean, rolloff_var = get_spectral_rolloff(
+            y,
+            sr,
+            self.config["spectral-rolloff"]["rolloff-percent"],
+            self.config["spectral-rolloff"]["get-stats"],
+        )
 
         # mfcc
-        mfcc = get_mfcc(y, sr, n_mfcc=self.config['mfcc']['n'], get_mean=self.config['mfcc']['use-mean'])
-        features = np.append(features, mfcc)
+        mfcc = get_mfcc(
+            y,
+            sr,
+            n_mfcc=self.config["mfcc"]["n"],
+            get_mean=self.config["mfcc"]["use-mean"],
+        )
 
-        return features
+        return np.append(np.array([zcr, *freq_range, major, key, rolloff_mean, rolloff_var]), mfcc)
 
     def feature_list(self):
         """Returns a list of the feature labels"""
-        fl = ['zcr', 'min_freq', 'max_freq']
+        fl = [
+            "zcr",
+            "min_freq",
+            "max_freq",
+            "major",
+            "key",
+            "rolloff_mean",
+            "rolloff_var",
+        ]
 
-        for i in range(self.config['mfcc']['n']):
-            fl.append(f'mfcc{i+1}')
+        for i in range(self.config["mfcc"]["n"]):
+            fl.append(f"mfcc{i+1}")
 
         return fl
 
@@ -189,12 +218,14 @@ class FeatureProcessor:
         for track_id in df.track_id:
             feature_array = self.process_file(get_wav_filepath(track_id))
             features = np.vstack((features, feature_array))
-        
+
         # remove dummy row and make df
         features = features[1:]
         fdf = pd.DataFrame(features, columns=columns)
 
-        fdf['track_id'] = df['track_id']
-        fdf['genre_code'] = df['genre'].apply(lambda gen : self.config['genre-codes'][gen])
+        fdf["track_id"] = df["track_id"]
+        fdf["genre_code"] = df["genre"].apply(
+            lambda gen: self.config["genre-codes"][gen]
+        )
 
         return fdf

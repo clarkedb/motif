@@ -1,9 +1,13 @@
 # motif main
 
-from data import genre_dataframe
+from data import genre_dataframe, generate_genre_dataframe
 from features import FeatureProcessor
+from os import path
 
 if __name__ == '__main__':
+    if not path.exists("../data/genres.csv"):
+        generate_genre_dataframe()
+
     df = genre_dataframe()[:5]
     fp = FeatureProcessor()
 
