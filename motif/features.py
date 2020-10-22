@@ -5,6 +5,8 @@ from librosa.feature.spectral import zero_crossing_rate
 import numpy as np
 import scipy.linalg as la
 import scipy.stats as stats
+from tonnetz import get_ton
+from rhythm import ac_peaks
 
 import json
 from data import genre_dataframe, get_wav_filepath
@@ -172,7 +174,7 @@ class FeatureProcessor:
         # major/minor and key
         major, key = find_key(y, sr)
 
-        rolloff_mean, rolloff_var = get_spectral_rolloff(
+        rolloff = get_spectral_rolloff(
             y,
             sr,
             self.config["spectral-rolloff"]["rolloff-percent"],
@@ -187,7 +189,14 @@ class FeatureProcessor:
             get_mean=self.config["mfcc"]["use-mean"],
         )
 
-        return np.append(np.array([zcr, *freq_range, major, key, rolloff_mean, rolloff_var]), mfcc)
+        # Tempo autocorrelation peaks (top three)
+        tempo = ac_peaks(y, sr)
+
+        # Tonnetz
+        ton = get_ton(y, sr)
+
+        # append all features into a 1d array
+        return np.array([zcr, *freq_range, major, key, *rolloff, *mfcc, *tempo, *ton])
 
     def feature_list(self):
         """Returns a list of the feature labels"""
@@ -203,6 +212,12 @@ class FeatureProcessor:
 
         for i in range(self.config["mfcc"]["n"]):
             fl.append(f"mfcc{i+1}")
+
+        for i in range(self.config['tempo']['n']):
+            fl.append(f'tempo{i+1}')
+
+        for i in range(self.config['tonnetz']['n']):
+            fl.append(f'tonnetz{i+1}')
 
         return fl
 

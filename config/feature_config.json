@@ -23,5 +23,11 @@
   "spectral-rolloff": {
     "get-stats": true,
     "rolloff-percent": 0.99
+  },
+  "tempo": {
+    "n": 3
+  },
+  "tonnetz": {
+    "n": 12
   }
 }

@@ -43,7 +43,7 @@ def mp3_to_wav(show_progress=True):
         new_path = './../data/wavs/' + file_name + '.wav'
 
         # Call the subprocess using ffmpeg to convert the file to wav format (and supress all the output)
-        subprocess.call(['ffmpeg', '-i', filepath, new_path], stdout=devnull, stderr=devnull)
+        subprocess.call(['ffmpeg', '-i', filepath, new_path], stdout=devnull)
 
         # Increment the counter
         counter += 1

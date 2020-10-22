@@ -11,4 +11,6 @@ if __name__ == '__main__':
     df = genre_dataframe()[:5]
     fp = FeatureProcessor()
 
-    print(fp.process_df(df))
+    features_df = fp.process_df(df)
+    print(features_df)
+    print('\n', features_df.columns)
