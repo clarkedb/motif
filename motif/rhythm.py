@@ -56,7 +56,10 @@ def ac_peaks(data, rate, plot=False):
         plt.show()
 
     # Return the frequencies with the three highest autocorrelation value as an array
-    return np.array(freqs[peaks])[::-1]
+    if len(freqs[peaks]) == 3:
+        return np.array(freqs[peaks])[::-1]
+    else:
+        return np.array([float('NaN'), float('NaN'), float('NaN')])
 
 
 if __name__ == '__main__':
