@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 
+bad_tracks = [98565, 98567, 98569, 99134, 108925, 133297]
+
 
 def get_mp3_filenames(directory="../data/fma_small"):
     """
@@ -33,6 +35,11 @@ def generate_genre_dataframe(tracks="../data/fma_metadata/tracks.csv", outfile="
     """
     genre_series = get_genre_metadata(tracks)
     df = pd.DataFrame({'track_id': genre_series.index.values, 'genre': genre_series.values})
+
+    # remove files shorter than 30s before serializing
+    # see https://github.com/mdeff/fma/issues/8#issue-264055623
+    df = df[~df["track_id"].isin(bad_tracks)]
+
     df.to_csv(outfile)
     return
 

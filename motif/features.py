@@ -1,16 +1,15 @@
+import multiprocessing
 from typing import Tuple
-
 import librosa
-from librosa.feature.spectral import zero_crossing_rate
 import numpy as np
 import scipy.linalg as la
 import scipy.stats as stats
 from tonnetz import get_ton
 from rhythm import ac_peaks
-
 import json
-from data import genre_dataframe, get_wav_filepath
+from data import genre_dataframe, get_wav_filepath, generate_genre_dataframe
 import pandas as pd
+from os import path
 
 # coefficients from: http://rnhart.net/articles/key-finding/
 major_coeffs = la.circulant(
@@ -227,19 +226,50 @@ class FeatureProcessor:
         """
         columns = self.feature_list()
 
-        # placeholder
         features = np.empty((len(df), len(columns)))
+        bad_tracks = []
 
         for i, track_id in enumerate(df.track_id):
             print(i, track_id)
-            features[i] = self.process_file(get_wav_filepath(track_id))
+            try:
+                features[i] = self.process_file(get_wav_filepath(track_id))
+            except ValueError as e:
+                print(f"Error with i={i}, track_id={track_id}:")
+                print(e)
+                bad_tracks.append(track_id)
 
         # convert to dataframe
         fdf = pd.DataFrame(features, columns=columns)
 
-        fdf["track_id"] = df["track_id"]
+        fdf["track_id"] = df["track_id"].to_numpy()
         fdf["genre_code"] = df["genre"].apply(
             lambda gen: self.config["genre-codes"][gen]
-        )
+        ).to_numpy()
+
+        # remove bad tracks
+        if bad_tracks:
+            fdf = fdf[~fdf["track_id"].isin(bad_tracks)]
+            print("Bad tracks removed:", bad_tracks)
 
         return fdf
+
+
+def get_features(df):
+    return FeatureProcessor().process_df(df)
+
+
+def process_features(processes=8):
+    if not path.exists("../data/genres.csv"):
+        generate_genre_dataframe()
+
+    df = genre_dataframe()
+
+    pool = multiprocessing.Pool(processes=processes)
+    split_features = pool.map(
+        get_features, [df[1000 * i: min(1000 * (i + 1), len(df.index))] for i in range(8)],
+    )
+    features = pd.concat(split_features)
+
+    features.to_csv("../data/features.csv")
+
+    return features

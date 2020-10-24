@@ -1,16 +1,12 @@
 # motif main
 
-from data import genre_dataframe, generate_genre_dataframe
-from features import FeatureProcessor
-from os import path
+# from features import process_features
+from models import logistic_regression
 
-if __name__ == '__main__':
-    if not path.exists("../data/genres.csv"):
-        generate_genre_dataframe()
+if __name__ == "__main__":
+    logistic_regression(plot_matrix=True, test_size=.1, normalize=True)
 
-    df = genre_dataframe()[:5]
-    fp = FeatureProcessor()
+    """features_df = process_features()
 
-    features_df = fp.process_df(df)
     print(features_df)
-    print('\n', features_df.columns)
+    print("\n", features_df.columns)"""
