@@ -18,7 +18,7 @@
   },
   "mfcc": {
     "use-mean": true,
-    "n": 6
+    "n": 30
   },
   "spectral-rolloff": {
     "get-stats": true,

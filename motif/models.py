@@ -54,7 +54,7 @@ def plot_confusion_matrix(
 
 
 def logistic_regression(
-        filename="../data/features.csv", plot_matrix=False, test_size=0.3, normalize=False
+        filename="../data/features_v2.csv", plot_matrix=False, test_size=0.3, normalize=False
 ):
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
@@ -71,7 +71,7 @@ def logistic_regression(
     return clf
 
 
-def tune_hyperparameters(filename="../data/features.csv", n_jobs=8, test_size=.3):
+def tune_hyperparameters(filename="../data/features_v2.csv", n_jobs=8, test_size=.3):
     # load features
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
