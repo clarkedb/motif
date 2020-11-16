@@ -1,6 +1,8 @@
 from joblib import Parallel, delayed
 from sklearn import preprocessing
 from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split, ParameterGrid
 from sklearn.metrics import confusion_matrix
 from itertools import product
@@ -70,6 +72,26 @@ def logistic_regression(
 
     return clf
 
+def mlp(filename='../data/features_v2.csv', test_size=.3):
+    df = pd.read_csv(filename, index_col=0)
+    x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
+    y = df["genre_code"]
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
+    clf = MLPClassifier(max_iter=500, warm_start=False, hidden_layer_sizes=700, alpha=.002).fit(x_train, y_train)
+    predictions = clf.predict(x_test)
+    print("MLP Accuracy:", (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test))
+
+def knn(filename='../data/features_v2.csv', test_size=.3):
+    df = pd.read_csv(filename, index_col=0)
+    x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
+    y = df["genre_code"]
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
+    clf = KNeighborsClassifier(weights='distance', n_neighbors=100, leaf_size=50, algorithm='kd_tree')
+    clf.fit(x_train, y_train)
+    predictions = clf.predict(x_test)
+    print("KNN Accuracy:", (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test))
 
 def tune_hyperparameters(filename="../data/features_v2.csv", n_jobs=8, test_size=.3):
     # load features
