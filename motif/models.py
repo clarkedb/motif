@@ -1,5 +1,6 @@
 from joblib import Parallel, delayed
 from sklearn import preprocessing
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -10,6 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
+import xgboost as xgb
 
 genres = [
     "Hip-Hop",
@@ -66,6 +68,69 @@ def logistic_regression(
     clf = LogisticRegression().fit(x_train, y_train)
     predictions = clf.predict(x_test)
     print("Accuracy:", (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test))
+
+    if plot_matrix:
+        plot_confusion_matrix(y_test, predictions, genres, normalize=normalize)
+
+    return clf
+
+def xgboost(filename='../data/features_v2.csv', test_size=.3, plot_matrix=False, normalize=True):
+    df = pd.read_csv(filename, index_col=0)
+    x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
+    y = df["genre_code"]
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
+    dtrain = xgb.DMatrix(x_train, label=y_train)
+    dtest = xgb.DMatrix(x_test)
+
+    params = {'alpha': 0,
+        'eta': 0.3,
+        'gamma': 0,
+        'lambda': 1.5,
+        'max_depth': 6,
+        'num_class': 10,
+        'objective': 'multi:softmax'
+    }
+
+    # train model with best parameters from grid search
+    bst = xgb.train(params, dtrain)
+
+    dtest = xgb.DMatrix(x_test)
+    predictions = bst.predict(dtest)
+    print("XGBoost Accuracy:", (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test))
+
+    if plot_matrix:
+        plot_confusion_matrix(y_test, predictions, genres, normalize=normalize)
+
+    return bst
+
+def random_forest(filename='../data/features_v2.csv', test_size=.3, plot_matrix=False, normalize=True):
+    df = pd.read_csv(filename, index_col=0)
+    x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
+    y = df["genre_code"]
+
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
+    
+    params = {
+        'max_depth': 10,
+        'max_features': 4,
+        'n_estimators': 150
+    }
+
+    clf = RandomForestClassifier()
+    clf.set_params(**params)
+    clf.fit(x_train, y_train)
+
+    # get feature importance
+    features = x.columns
+    imp = clf.feature_importances_
+    sorted = np.argsort(imp)
+
+    print("Most-Important:", [features[i] for i in sorted[-3:]])
+    print("Least-Important:", [features[i] for i in sorted[:3]])
+
+    predictions = clf.predict(x_test)
+    print("RF Accuracy:", (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test))
 
     if plot_matrix:
         plot_confusion_matrix(y_test, predictions, genres, normalize=normalize)
