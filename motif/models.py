@@ -122,7 +122,7 @@ def random_forest(filename='../data/features_v2.csv', test_size=.3, plot_matrix=
     clf.fit(x_train, y_train)
 
     # get feature importance
-    features = x.columns
+    features = df.drop(["track_id", "genre_code"], axis=1).columns
     imp = clf.feature_importances_
     sorted = np.argsort(imp)
 
