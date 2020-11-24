@@ -59,7 +59,7 @@ def plot_confusion_matrix(
 
 
 def logistic_regression(
-        filename="../data/features_v2.csv",
+        filename="../data/features.csv",
         plot_matrix=False,
         test_size=0.3,
         normalize=False,
@@ -83,7 +83,7 @@ def logistic_regression(
 
 
 def xgboost(
-        filename="../data/features_v2.csv", test_size=0.3, plot_matrix=False, normalize=True
+        filename="../data/features.csv", test_size=0.3, plot_matrix=False, normalize=True
 ):
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
@@ -118,16 +118,16 @@ def xgboost(
 
 
 def random_forest(
-        filename="../data/features_v2.csv", test_size=0.3, plot_matrix=False, normalize=True,
+        filename="../data/features.csv", test_size=0.3, plot_matrix=False, normalize=True,
         print_feature_importance=False
 ):
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
     y = df["genre_code"]
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, stratify=y)
 
-    params = {"max_depth": 10, "max_features": 4, "n_estimators": 150}
+    params = {"n_estimators": 1000}
 
     clf = RandomForestClassifier()
     clf.set_params(**params)
@@ -154,7 +154,7 @@ def random_forest(
     return clf
 
 
-def mlp(filename="../data/features_v2.csv", test_size=0.3):
+def mlp(filename="../data/features.csv", test_size=0.3):
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
     y = df["genre_code"]
@@ -170,7 +170,7 @@ def mlp(filename="../data/features_v2.csv", test_size=0.3):
     )
 
 
-def knn(filename="../data/features_v2.csv", test_size=0.3):
+def knn(filename="../data/features.csv", test_size=0.3):
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))
     y = df["genre_code"]
@@ -187,7 +187,7 @@ def knn(filename="../data/features_v2.csv", test_size=0.3):
     )
 
 
-def tune_hyperparameters(filename="../data/features_v2.csv", n_jobs=8, test_size=0.3):
+def tune_hyperparameters(filename="../data/features.csv", n_jobs=8, test_size=0.3):
     # load features
     df = pd.read_csv(filename, index_col=0)
     x = preprocessing.scale(df.drop(["track_id", "genre_code"], axis=1))

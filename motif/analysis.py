@@ -46,7 +46,7 @@ def plot_by_label(dim1, dim2, y):
     plt.show()
 
 
-def scree_plot(filename="../data/features_v2.csv"):
+def scree_plot(filename="../data/features.csv"):
     X, y = load_features(filename)
 
     # compute the variance explained by each principal component
@@ -66,7 +66,7 @@ def scree_plot(filename="../data/features_v2.csv"):
     plt.show()
 
 
-def two_variable_pca(filename="../data/features_v2.csv"):
+def two_variable_pca(filename="../data/features.csv"):
     X, y = load_features(filename)
 
     # compute the first two principal components
@@ -75,7 +75,7 @@ def two_variable_pca(filename="../data/features_v2.csv"):
     plot_by_label(pc[:, 0], pc[:, 1], y)
 
 
-def t_sne(filename="../data/features_v2.csv"):
+def t_sne(filename="../data/features.csv"):
     X, y = load_features(filename)
 
     # embed in two dimensions
