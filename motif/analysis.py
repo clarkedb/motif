@@ -46,7 +46,7 @@ def plot_by_label(dim1, dim2, y):
     plt.show()
 
 
-def scree_plot(filename="../data/features.csv"):
+def scree_plot(filename="../data/features.csv", savefile_name=None):
     X, y = load_features(filename)
 
     # compute the variance explained by each principal component
@@ -63,6 +63,8 @@ def scree_plot(filename="../data/features.csv"):
     plt.ylabel("Explained Variance")
     plt.suptitle("Variance Explained by Principal Components")
     plt.legend()
+    if savefile_name is not None:
+        plt.savefig(savefile_name, bbox_inches='tight', facecolor='w', transparent=False)
     plt.show()
 
 
