@@ -37,7 +37,7 @@ def plot_confusion_matrix(
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(labels))
-    plt.xticks(tick_marks, labels, rotation=45)
+    plt.xticks(tick_marks, labels, rotation=90)
     plt.yticks(tick_marks, labels)
 
     fmt = ".2f" if normalize else "d"
@@ -149,7 +149,7 @@ def random_forest(
     # )
 
     if plot_matrix:
-        plot_confusion_matrix(y_test, predictions, genres, normalize=normalize)
+        plot_confusion_matrix(y_test, predictions, genres, normalize=normalize, title="Random Forest Confusion Matrix")
 
     return clf
 
