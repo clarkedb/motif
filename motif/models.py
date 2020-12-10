@@ -143,10 +143,10 @@ def random_forest(
         print("Least-Important:", [features[i] for i in sorted_features[:3]])
 
     predictions = clf.predict(x_test)
-    print(
-        "RF Accuracy:",
-        (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test),
-    )
+    # print(
+    #     "RF Accuracy:",
+    #     (len(y_test) - np.count_nonzero(predictions - y_test)) / len(y_test),
+    # )
 
     if plot_matrix:
         plot_confusion_matrix(y_test, predictions, genres, normalize=normalize)
